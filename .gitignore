@@ -1,1 +1,3 @@
 RSS-aggregator.exe
+.env
+vendor/
