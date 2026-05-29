@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/Aayushman-nvm/RSS-aggregator/db/sqlc"
 	"github.com/go-chi/chi"
@@ -37,9 +38,13 @@ func main() {
 		log.Fatal("Can't connect to Neon db")
 	}
 
+	dbConnection := sqlc.New(conn)
+
 	apiCfg := apiConfig{
-		DB: sqlc.New(conn),
+		DB: dbConnection,
 	}
+
+	go startScraping(dbConnection, 10, time.Minute)
 
 	router := chi.NewRouter()
 
@@ -64,6 +69,10 @@ func main() {
 
 	v1Router.Post("/feeds", apiCfg.middlewareAuth(apiCfg.handlerCreateFeed))
 	v1Router.Get("/feeds", apiCfg.handlerGetFeeds)
+
+	v1Router.Post("/feed_follows", apiCfg.middlewareAuth(apiCfg.handlerCreateFeedFollow))
+	v1Router.Get("/feed_follows", apiCfg.middlewareAuth(apiCfg.handlerGetFeedFollows))
+	v1Router.Delete("/feed_follows/{feedFollowID}", apiCfg.middlewareAuth(apiCfg.handlerDeleteFeedFollow))
 
 	router.Mount("/v1", v1Router)
 
