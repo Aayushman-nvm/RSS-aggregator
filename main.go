@@ -38,6 +38,15 @@ func main() {
 		log.Fatal("Can't connect to Neon db")
 	}
 
+	conn.SetMaxOpenConns(10)
+	conn.SetMaxIdleConns(10)
+	conn.SetConnMaxLifetime(5 * time.Minute)
+
+	err = conn.Ping()
+	if err != nil {
+		log.Fatal("Database ping failed:", err)
+	}
+
 	dbConnection := sqlc.New(conn)
 
 	apiCfg := apiConfig{
@@ -69,6 +78,8 @@ func main() {
 
 	v1Router.Post("/feeds", apiCfg.middlewareAuth(apiCfg.handlerCreateFeed))
 	v1Router.Get("/feeds", apiCfg.handlerGetFeeds)
+
+	v1Router.Get("/posts", apiCfg.middlewareAuth(apiCfg.handlerGetPostsForUser))
 
 	v1Router.Post("/feed_follows", apiCfg.middlewareAuth(apiCfg.handlerCreateFeedFollow))
 	v1Router.Get("/feed_follows", apiCfg.middlewareAuth(apiCfg.handlerGetFeedFollows))
